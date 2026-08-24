@@ -5,6 +5,7 @@ import AIChat from './components/AIChat.jsx';
 import Quarantine from './components/Quarantine.jsx';
 import Codex from './components/Codex.jsx';
 import CategoryPage from './components/CategoryPage.jsx';
+import SearchPage from './components/SearchPage.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { getQuarantineItems } from './utils/db.js';
 import { supabase } from './utils/supabaseClient.js';
@@ -39,6 +40,7 @@ export default function App() {
       <Header active={tab} onChange={setTab} quarantineCount={quarantineCount} onSignOut={() => supabase?.auth.signOut()} />
       <ErrorBoundary key={tab}>
         {tab === 'overview' && <OverviewPage />}
+        {tab === 'search' && <SearchPage onAskJarvis={setJarvisSeed} />}
         {tab === 'quarantine' && <Quarantine onChange={refreshCount} onAskJarvis={setJarvisSeed} />}
         {tab === 'codex' && <Codex onAskJarvis={setJarvisSeed} />}
         {CATEGORY_TABS[tab] && (
