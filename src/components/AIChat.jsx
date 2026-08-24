@@ -299,6 +299,8 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
   // Jarvis's answer, or deliberately wanting two drafts from one reply).
   const [sentFlash, setSentFlash] = useState({});
   const [sendError, setSendError] = useState({});
+  const [isStreaming, setIsStreaming] = useState(false);
+  const abortControllerRef = useRef(null);
   const endRef = useRef(null);
   const saveStateTimer = useRef(null);
 
@@ -363,6 +365,13 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setIsTyping(true);
+    setIsStreaming(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    // Declared outside the try block so a stop-triggered AbortError in the
+    // catch below can still tell whether any text had already streamed in.
+    let hasPlaceholder = false;
+    let accumulated = '';
 
     try {
       // Give Jarvis real campaign memory — a fresh digest of the Overview and
@@ -400,6 +409,7 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
@@ -435,8 +445,6 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
       // Stream tokens in as they arrive instead of waiting for the full
       // reply — waiting for the whole completion before showing anything
       // is what made Jarvis feel slow even when the model itself was fine.
-      let hasPlaceholder = false;
-      let accumulated = '';
       let buffer = '';
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -480,10 +488,30 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
         setMessages((prev) => [...prev, { role: 'assistant', text: '(Jarvis returned an empty response.)' }]);
       }
     } catch (err) {
-      setMessages((prev) => [...prev, { role: 'assistant', text: `Something went wrong reaching the model: ${err.message}` }]);
+      if (err.name === 'AbortError') {
+        // Deliberate stop, not a failure — keep whatever text had already
+        // streamed in rather than discarding it or showing an error.
+        if (hasPlaceholder) {
+          setMessages((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: 'assistant', text: `${accumulated}\n\n*(stopped)*` };
+            return next;
+          });
+        } else {
+          setMessages((prev) => [...prev, { role: 'assistant', text: '*(stopped before responding)*' }]);
+        }
+      } else {
+        setMessages((prev) => [...prev, { role: 'assistant', text: `Something went wrong reaching the model: ${err.message}` }]);
+      }
     } finally {
       setIsTyping(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort();
   };
 
   const handleSend = (e) => {
@@ -690,13 +718,23 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
             placeholder="Ask Jarvis anything…"
             className="flex-1 border border-ink/25 rounded-sm p-2 text-sm bg-white/50"
           />
-          <button
-            type="submit"
-            disabled={!input.trim() || isTyping}
-            className="font-display uppercase tracking-wide text-xs px-4 py-2 bg-maroon text-parchment rounded-sm disabled:opacity-40"
-          >
-            Send
-          </button>
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={handleStop}
+              className="font-display uppercase tracking-wide text-xs px-4 py-2 border border-maroon/50 text-maroon-dark rounded-sm hover:bg-maroon/5"
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              className="font-display uppercase tracking-wide text-xs px-4 py-2 bg-maroon text-parchment rounded-sm disabled:opacity-40"
+            >
+              Send
+            </button>
+          )}
         </form>
       </div>
     </>
