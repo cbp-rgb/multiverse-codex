@@ -6,6 +6,27 @@ body {
   margin: 0;
 }
 
+/* "Bolder writing" pass: base body copy defaulted to a light 400 weight
+   (thin for EB Garamond at small sizes), and every small-caps field label
+   throughout the app used a faded text-ink/40|50|60 opacity that read as
+   washed-out. Rather than hand-edit the ~110 places that use those exact
+   Tailwind utility classes, override them globally here. `body`'s weight is
+   an element selector so it can't outrank an explicit font-bold/font-semibold
+   utility (those stay exactly as bold as intended) — it only raises the
+   default for text that never set a weight at all. */
+body {
+  font-weight: 500;
+}
+.text-ink\/40 {
+  color: rgb(43 29 19 / 0.62) !important;
+}
+.text-ink\/50 {
+  color: rgb(43 29 19 / 0.72) !important;
+}
+.text-ink\/60 {
+  color: rgb(43 29 19 / 0.8) !important;
+}
+
 /* A flat solid parchment color reads as a plain webpage, not a page in a
    book. Layer in a subtle fibrous grain (an SVG noise filter — no image
    asset needed) plus a faint edge vignette so the page has real texture and
