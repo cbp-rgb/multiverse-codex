@@ -1,11 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { getQuarantineItems, updateQuarantineItem, discardQuarantineItem, approveToCodex, sendToQuarantine } from '../utils/db.js';
 import { parseObsidianFile } from '../utils/importObsidian.js';
+import { mergeWithBlankEntry } from '../utils/schema.js';
+import { mergeWithBlankItemEntry } from '../utils/itemSchema.js';
+import { GENERIC_CATEGORIES, mergeWithBlankGenericEntry } from '../utils/genericSchema.js';
+import { ALL_CATEGORIES, ALL_CATEGORY_LABELS } from '../utils/categoryConvert.js';
 import EntryPageFor from './EntryPageFor.jsx';
 import ObsidianImporter from './ObsidianImporter.jsx';
 import ExportButton from './ExportButton.jsx';
 import PrintCard from './PrintCard.jsx';
 import { buildReworkSeed } from '../utils/reworkPrompt.js';
+
+// A blank starting point for hand-building an entry, independent of Jarvis
+// or an Obsidian import — same three payload shapes everything else uses.
+function makeBlankEntryForCategory(category) {
+  if (category === 'item') return mergeWithBlankItemEntry({}, { sourceLabel: 'Manual Entry' });
+  if (GENERIC_CATEGORIES.includes(category)) return mergeWithBlankGenericEntry(category, {}, { sourceLabel: 'Manual Entry' });
+  return mergeWithBlankEntry({ category, sourceLabel: 'Manual Entry' });
+}
 
 export default function Quarantine({ onChange, onAskJarvis }) {
   const [items, setItems] = useState([]);
@@ -14,6 +26,7 @@ export default function Quarantine({ onChange, onAskJarvis }) {
   const [draft, setDraft] = useState(null);
   const [savedAt, setSavedAt] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [newCategory, setNewCategory] = useState('monster');
   const saveTimer = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -69,6 +82,14 @@ export default function Quarantine({ onChange, onAskJarvis }) {
     await discardQuarantineItem(item.id);
     await refresh();
     onChange?.();
+  };
+
+  const handleCreateNew = async () => {
+    const entry = makeBlankEntryForCategory(newCategory);
+    const saved = await sendToQuarantine(entry);
+    await refresh();
+    onChange?.();
+    openItem(saved);
   };
 
   const handleImportFiles = async (e) => {
@@ -130,6 +151,24 @@ export default function Quarantine({ onChange, onAskJarvis }) {
       <div className="text-center mb-10">
         <div className="font-deco text-[34px] text-maroon-dark">Quarantine</div>
         <div className="italic text-ink/60 mt-2">Nothing here is canon. Read it, reshape it, or send it back to the void.</div>
+      </div>
+
+      <div className="flex justify-center items-center gap-3 mb-8">
+        <select
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          className="bg-transparent border-0 border-b border-dashed border-ink/25 outline-none text-[12px] font-display uppercase tracking-wide text-ink/60 py-2"
+        >
+          {ALL_CATEGORIES.map((c) => (
+            <option key={c} value={c}>{ALL_CATEGORY_LABELS[c] || c}</option>
+          ))}
+        </select>
+        <button
+          onClick={handleCreateNew}
+          className="font-display text-[12px] uppercase tracking-wide px-4 py-2 border border-maroon/40 rounded-sm text-maroon-dark hover:bg-maroon/5"
+        >
+          + Build New Entry
+        </button>
       </div>
 
       <ObsidianImporter onImported={() => { refresh(); onChange?.(); }} />
