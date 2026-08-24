@@ -220,6 +220,7 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
   // same message can be sent to Quarantine more than once (e.g. after tweaking
   // Jarvis's answer, or deliberately wanting two drafts from one reply).
   const [sentFlash, setSentFlash] = useState({});
+  const [sendError, setSendError] = useState({});
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -380,7 +381,17 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
     } else {
       entry = mergeWithBlankEntry({ notes: msg.text, sourceLabel: 'Co-DM Chat' });
     }
-    await sendToQuarantine(entry);
+    try {
+      await sendToQuarantine(entry);
+    } catch (err) {
+      setSendError((prev) => ({ ...prev, [idx]: err?.message || String(err) }));
+      return;
+    }
+    setSendError((prev) => {
+      const next = { ...prev };
+      delete next[idx];
+      return next;
+    });
     // Flash "Sent ✓" briefly rather than disabling permanently — the same
     // message can be sent to Quarantine again (e.g. to get a second draft).
     setSentFlash((prev) => ({ ...prev, [idx]: true }));
@@ -517,6 +528,9 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
                           >
                             {sentFlash[idx] ? 'Sent ✓' : parsed ? '→ Send Structured Entry' : '→ Send to Quarantine'}
                           </button>
+                          {sendError[idx] && (
+                            <div className="text-[11px] text-maroon-dark mt-1.5 italic">Couldn't save: {sendError[idx]}</div>
+                          )}
                         </>
                       );
                     })()}
