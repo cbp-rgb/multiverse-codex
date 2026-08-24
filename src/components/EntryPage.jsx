@@ -1,6 +1,7 @@
 import { PageInput, PageTextarea, SectionHeading } from './PageField.jsx';
 import { RepeatableFields, RepeatableStrings } from './RepeatableFields.jsx';
-import { CATEGORIES, CATEGORY_LABELS, setPath } from '../utils/schema.js';
+import { setPath } from '../utils/schema.js';
+import { ALL_CATEGORIES, ALL_CATEGORY_LABELS, convertEntryCategory } from '../utils/categoryConvert.js';
 import Divider from './Divider.jsx';
 import EntryImages from './EntryImages.jsx';
 import DMNotesSection from './DMNotesSection.jsx';
@@ -51,12 +52,12 @@ export default function EntryPage({ entry, editable = false, onChange }) {
           <div className="inline-flex items-center gap-3 mb-4 justify-center">
             <select
               value={entry.category}
-              onChange={(e) => set(['category'], e.target.value)}
+              onChange={(e) => onChange?.(convertEntryCategory(entry, e.target.value))}
               className="bg-transparent border-0 border-b border-dashed border-ink/20 outline-none text-[11px] font-display uppercase tracking-widest text-ink/60"
             >
-              {CATEGORIES.map((c) => (
+              {ALL_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABELS[c] || c}
+                  {ALL_CATEGORY_LABELS[c] || c}
                 </option>
               ))}
             </select>

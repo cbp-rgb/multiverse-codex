@@ -2,6 +2,7 @@ import { PageInput, PageTextarea, SectionHeading } from './PageField.jsx';
 import { RepeatableFields, RepeatableStrings } from './RepeatableFields.jsx';
 import { getGenericSchema } from '../utils/genericSchema.js';
 import { setPath } from '../utils/schema.js';
+import { ALL_CATEGORIES, ALL_CATEGORY_LABELS, convertEntryCategory } from '../utils/categoryConvert.js';
 import Divider from './Divider.jsx';
 import EntryImages from './EntryImages.jsx';
 import DMNotesSection from './DMNotesSection.jsx';
@@ -66,7 +67,21 @@ export default function GenericEntryPage({ entry, editable = false, onChange }) 
       <div className="text-center">
         <div className="inline-flex items-center gap-2 mb-1">
           <span className="text-gold text-base leading-none" aria-hidden="true">{icon}</span>
-          <span className="text-[10px] font-display uppercase tracking-widest text-ink/50">{schema.label}</span>
+          {editable ? (
+            <select
+              value={entry.category}
+              onChange={(e) => onChange?.(convertEntryCategory(entry, e.target.value))}
+              className="bg-transparent border-0 border-b border-dashed border-ink/20 outline-none text-[10px] font-display uppercase tracking-widest text-ink/60"
+            >
+              {ALL_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {ALL_CATEGORY_LABELS[c] || c}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-[10px] font-display uppercase tracking-widest text-ink/50">{schema.label}</span>
+          )}
           <span className="text-gold text-base leading-none" aria-hidden="true">{icon}</span>
         </div>
         {schema.subtitle && <div className="italic text-[12px] text-ink/40 mb-3">{schema.subtitle}</div>}

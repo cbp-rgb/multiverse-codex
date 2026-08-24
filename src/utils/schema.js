@@ -1,15 +1,3 @@
-export const CATEGORIES = ['monster', 'npc', 'item', 'spell', 'location', 'faction', 'mechanic'];
-
-export const CATEGORY_LABELS = {
-  monster: 'Monsters',
-  npc: 'NPCs',
-  item: 'Items',
-  spell: 'Spells',
-  location: 'Locations',
-  faction: 'Factions',
-  mechanic: 'Mechanics',
-};
-
 export function makeBlankEntry() {
   return {
     slug: '',

@@ -1,6 +1,8 @@
 import yaml from 'js-yaml';
-import { mergeWithBlankEntry, CATEGORIES } from './schema.js';
+import { mergeWithBlankEntry } from './schema.js';
 import { mergeWithBlankItemEntry } from './itemSchema.js';
+import { GENERIC_CATEGORIES, mergeWithBlankGenericEntry } from './genericSchema.js';
+import { ALL_CATEGORIES } from './categoryConvert.js';
 
 // Obsidian notes are plain markdown, usually with an optional YAML frontmatter
 // block up top. We lift whatever recognizable fields we can out of the
@@ -29,12 +31,20 @@ export function parseObsidianFile(filename, text) {
       ? frontmatter.vault_tags
       : [];
 
-  const category = CATEGORIES.includes(frontmatter.category) ? frontmatter.category : 'monster';
+  const category = ALL_CATEGORIES.includes(frontmatter.category) ? frontmatter.category : 'monster';
   const sourceLabel = `Imported from Obsidian (${filename})`;
 
   if (category === 'item') {
     return mergeWithBlankItemEntry(
       { name: frontmatter.title || guessedTitle, canon_universe: frontmatter.source_franchise || frontmatter.franchise || '', vault_tags: tags },
+      { notes: body.trim(), sourceLabel }
+    );
+  }
+
+  if (GENERIC_CATEGORIES.includes(category)) {
+    return mergeWithBlankGenericEntry(
+      category,
+      { name: frontmatter.title || guessedTitle, source_franchise: frontmatter.source_franchise || frontmatter.franchise || '', vault_tags: tags },
       { notes: body.trim(), sourceLabel }
     );
   }

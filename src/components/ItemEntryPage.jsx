@@ -2,6 +2,7 @@ import { PageInput, PageTextarea, SectionHeading } from './PageField.jsx';
 import { RepeatableFields, RepeatableStrings } from './RepeatableFields.jsx';
 import { ITEM_TYPES, ITEM_RARITIES, ITEM_CATEGORIES } from '../utils/itemSchema.js';
 import { setPath } from '../utils/schema.js';
+import { ALL_CATEGORIES, ALL_CATEGORY_LABELS, convertEntryCategory } from '../utils/categoryConvert.js';
 import Divider from './Divider.jsx';
 import EntryImages from './EntryImages.jsx';
 import DMNotesSection from './DMNotesSection.jsx';
@@ -45,7 +46,21 @@ export default function ItemEntryPage({ entry, editable = false, onChange }) {
     <div>
       {/* Identity */}
       <div className="text-center">
-        <div className="text-[10px] font-display uppercase tracking-widest text-ink/50 mb-3">Item</div>
+        {editable ? (
+          <select
+            value={entry.category}
+            onChange={(e) => onChange?.(convertEntryCategory(entry, e.target.value))}
+            className="bg-transparent border-0 border-b border-dashed border-ink/20 outline-none text-[10px] font-display uppercase tracking-widest text-ink/60 mb-3"
+          >
+            {ALL_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {ALL_CATEGORY_LABELS[c] || c}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="text-[10px] font-display uppercase tracking-widest text-ink/50 mb-3">Item</div>
+        )}
         <Field
           editable={editable}
           value={entry.title}
