@@ -40,6 +40,17 @@ drop policy if exists "authenticated full access" on overview_data;
 create policy "authenticated full access" on overview_data
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
+-- RLS policies only control WHICH rows a role can see/touch — they don't by
+-- themselves grant a role access to the table at all. A table created via
+-- raw SQL (as opposed to the Table Editor UI, which does this automatically)
+-- has no privileges for `authenticated`/`anon` until explicitly granted, so
+-- without this every query fails with "permission denied for table X" before
+-- RLS is ever evaluated.
+grant usage on schema public to authenticated, anon;
+grant select, insert, update, delete on quarantine_items to authenticated;
+grant select, insert, update, delete on codex_entries to authenticated;
+grant select, insert, update, delete on overview_data to authenticated;
+
 -- After running this: Authentication → Users → Add User, create yourself one
 -- account (any email, a real password — that password becomes the app's
 -- login password). Put that email in VITE_AUTH_EMAIL.
