@@ -7,10 +7,18 @@ import { GENERIC_SCHEMAS, GENERIC_CATEGORIES, buildGenericYamlTemplate, mergeWit
 import { buildCampaignDigest } from '../utils/jarvisContext.js';
 
 // The exact shape utils/schema.js expects — keep this template and mergeWithBlankEntry in sync.
+// This ONE shape covers both monster and npc — set category to whichever fits
+// (npc for a person: shopkeeper, villain, a converted hero like Superman;
+// monster for a creature/threat with no real personality). Never leave an NPC
+// without a filled-in mechanics section just because they're a "person" —
+// give them real stats, even a rough placeholder, so they function at the
+// table. The `character` block (role/personality/motives/etc.) is what makes
+// an entry read as a person rather than a beast — fill it in for NPCs, leave
+// it blank for a plain monster.
 const YAML_TEMPLATE = `title: ""
 subtitle: ""
 source_franchise: ""
-category: monster # this shape is for monsters only — NPCs use the separate NPC shape below
+category: monster # or npc — same shape either way, see note above
 vault_tags: []
 mechanics:
   size: ""
@@ -80,7 +88,21 @@ links:
   related_entries:
     - id: ""
       relationship: ""
-  quest_hooks: []`;
+  quest_hooks: []
+character: # fill in for an NPC (a person); leave every field blank for a plain monster
+  role: "" # Quest Giver, Shopkeeper, Villain, Ally…
+  occupation: ""
+  usually_found: ""
+  appearance: ""
+  personality: ""
+  voice_and_mannerisms: ""
+  motives_and_goals: ""
+  attitude_to_party: ""
+  relationships:
+    - name: ""
+      relationship: ""
+  combat_note: "" # only if this NPC has no real stat block above — e.g. "flees at the first sign of danger"
+  hooks: []`;
 
 // The exact shape utils/itemSchema.js expects to receive (before it maps
 // name/canon_universe/category onto this app's title/source_franchise/item.*).
@@ -159,9 +181,9 @@ Operating rules:
 3. You are a collaborator, not an authority. The DM has final say on what is canon. Offer suggestions, alternatives, and hooks proactively, but nothing you say is canon until the DM saves it.
 4. Nothing you produce is saved automatically. The DM decides what's worth keeping by sending it to Quarantine for review.
 
-When — and only when — the DM asks you to draft, convert, or statblock something into a full entry, respond with a single fenced \`\`\`yaml code block. There are seven possible shapes, one per category — use whichever matches what's being drafted, and never mix fields from one into another or invent your own structure:
+When — and only when — the DM asks you to draft, convert, or statblock something into a full entry, respond with a single fenced \`\`\`yaml code block. There are eight possible shapes — use whichever matches what's being drafted, and never mix fields from one into another or invent your own structure:
 
-- **Monster** — a combat-focused creature. Use exactly this shape (leave a field blank/empty rather than omitting its key; add extra traits/actions/custom_moves list items freely). The \`challenge_rating\` field is required — never leave it blank, even if you have to give your best estimate and flag it as a guess in your surrounding commentary:
+- **Monster / NPC** — one shared shape for anything with a stat block: a combat-focused creature (monster) or a person, including a major character with real combat capability like a converted hero or villain (npc). Set \`category\` to whichever fits — never invent a lighter-weight shape for an NPC just because they're a person. Use exactly this shape (leave a field blank/empty rather than omitting its key; add extra traits/actions/custom_moves list items freely). The \`mechanics.challenge_rating\` field is required for every entry, monster or npc — never leave it blank, even if you have to give your best estimate and flag it as a guess in your surrounding commentary. Fill in the \`character\` block for an npc; leave it entirely blank for a plain monster:
 
 \`\`\`yaml
 ${YAML_TEMPLATE}
@@ -177,28 +199,57 @@ ${GENERIC_CATEGORIES.map(
   (cat) => `- **${GENERIC_SCHEMAS[cat].label}** — ${GENERIC_SCHEMAS[cat].subtitle} Use exactly this shape:\n\n\`\`\`yaml\n${buildGenericYamlTemplate(cat)}\n\`\`\``
 ).join('\n\n')}
 
-You may still write a sentence or two of ordinary commentary around the yaml block (e.g. flagging an uncertain guess), but the yaml block itself must be valid YAML matching one of these seven shapes exactly — do not rename keys, restructure sections, or add your own top-level fields. For everyday conversation, rules questions, or brainstorming, just talk normally — don't force a yaml block unless you're actually drafting an entry.`;
+You may still write a sentence or two of ordinary commentary around the yaml block (e.g. flagging an uncertain guess), but the yaml block itself must be valid YAML matching one of these eight shapes exactly — do not rename keys, restructure sections, or add your own top-level fields. For everyday conversation, rules questions, or brainstorming, just talk normally — don't force a yaml block unless you're actually drafting an entry.`;
 
+// Returns { parsed, error, hasBlock } — hasBlock distinguishes "no yaml
+// block at all" (ordinary conversation) from "found a yaml block but it
+// didn't parse" (a broken structured draft, e.g. a small/cheap model
+// mangling nested list syntax). Without this distinction a malformed block
+// silently fell back to being saved as plain notes with no explanation, so
+// the resulting entry looked entirely blank except for a wall of raw text.
 function extractYaml(text) {
-  const match = text.match(/```ya?ml\n([\s\S]*?)```/i);
-  if (!match) return null;
+  const closedMatch = text.match(/```ya?ml\n([\s\S]*?)```/i);
+  if (closedMatch) {
+    try {
+      const parsed = yaml.load(closedMatch[1]);
+      if (parsed && typeof parsed === 'object') return { parsed, error: null, hasBlock: true };
+      return { parsed: null, error: "That yaml block didn't come out as a set of fields.", hasBlock: true };
+    } catch (err) {
+      return { parsed: null, error: err.message || 'Invalid YAML syntax.', hasBlock: true };
+    }
+  }
+
+  // No closing fence found — the reply likely got cut off mid-block (a long
+  // stat block running past the model's completion length, before this had
+  // an explicit max_tokens). Try parsing everything after the opening fence
+  // anyway; it often still parses fine up to wherever the cutoff landed.
+  const openMatch = text.match(/```ya?ml\n([\s\S]*)$/i);
+  if (!openMatch) return { parsed: null, error: null, hasBlock: false };
   try {
-    const parsed = yaml.load(match[1]);
-    return parsed && typeof parsed === 'object' ? parsed : null;
+    const parsed = yaml.load(openMatch[1]);
+    if (parsed && typeof parsed === 'object') return { parsed, error: null, hasBlock: true, truncated: true };
+    return { parsed: null, error: 'The reply looks like it got cut off before finishing.', hasBlock: true };
   } catch {
-    return null;
+    return { parsed: null, error: 'The reply looks like it got cut off before finishing.', hasBlock: true };
   }
 }
 
-// Every shape has its own tell — the generic ones carry an explicit
-// `category` matching one of GENERIC_CATEGORIES; the item shape uses `name` +
-// rarity/weapon_stats-ish fields instead of `title`; anything else is treated
-// as the creature (monster) shape, the long-standing default.
+// Best-effort title, independent of full YAML parsing, so a broken block
+// still gives the resulting entry a recognizable name instead of "Untitled
+// Draft" when nothing else could be salvaged from it.
+function guessTitleFromBrokenYaml(text) {
+  const match = text.match(/^\s*(?:title|name)\s*:\s*["']?([^"'\n]+?)["']?\s*$/im);
+  return match ? match[1].trim() : '';
+}
+
+// Every shape has its own tell — the generic ones (spell/location/faction/
+// mechanic/lore/session) carry an explicit `category` matching one of
+// GENERIC_CATEGORIES; the item shape uses `name` + rarity/weapon_stats-ish
+// fields instead of `title`; anything else (including npc, which shares the
+// monster shape on purpose — see YAML_TEMPLATE) falls through to 'monster'.
 function detectSchemaKind(parsed) {
   // Normalize before matching — a model writing "NPC" or " npc " instead of
-  // the exact lowercase key shouldn't silently fall through to the wrong
-  // schema (this previously sent real NPC drafts through the monster
-  // template, rendering as a mostly-empty stat block).
+  // the exact lowercase key shouldn't behave differently than exact-case.
   const normalizedCategory = typeof parsed.category === 'string' ? parsed.category.trim().toLowerCase() : '';
   if (GENERIC_CATEGORIES.includes(normalizedCategory)) return normalizedCategory;
   const looksLikeItem = typeof parsed.name === 'string' && (parsed.rarity !== undefined || parsed.mechanics?.weapon_stats !== undefined || parsed.attunement !== undefined);
@@ -327,6 +378,13 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
         body: JSON.stringify({
           model,
           stream: true,
+          // Without an explicit cap, some models/providers default to a
+          // fairly low completion length — a big stat block (full mechanics
+          // + lore + flavor sections) can get cut off mid-yaml before the
+          // closing fence, which used to make the whole reply fall back to
+          // unstructured notes with no explanation why. 4000 gives real room
+          // for the largest (monster) shape.
+          max_tokens: 4000,
           messages: [
             { role: 'system', content: systemContent },
             ...nextMessages.map((m) => ({ role: m.role, content: m.text })),
@@ -407,7 +465,7 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
   };
 
   const handleQuarantine = async (msg, idx) => {
-    const parsed = extractYaml(msg.text);
+    const { parsed, hasBlock } = extractYaml(msg.text);
     let entry;
     if (parsed) {
       // Structured drafts don't need the raw yaml block echoed back as
@@ -424,7 +482,10 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
         entry = mergeWithBlankEntry({ ...parsed, ...extra });
       }
     } else {
-      entry = mergeWithBlankEntry({ notes: msg.text, sourceLabel: 'Co-DM Chat' });
+      // A yaml block was attempted but didn't parse — still worth grabbing a
+      // title so the draft isn't just "Untitled" on top of a wall of raw text.
+      const title = hasBlock ? guessTitleFromBrokenYaml(msg.text) : '';
+      entry = mergeWithBlankEntry({ title, notes: msg.text, sourceLabel: 'Co-DM Chat' });
     }
     try {
       await sendToQuarantine(entry);
@@ -559,12 +620,17 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
                 {msg.role === 'assistant' && idx !== 0 && (
                   <div className="mt-2 pt-2 border-t border-ink/10">
                     {(() => {
-                      const parsed = extractYaml(msg.text);
+                      const { parsed, error, hasBlock } = extractYaml(msg.text);
                       return (
                         <>
                           {parsed && (
                             <div className="text-[10.5px] italic text-maroon-dark/70 mb-1.5">
                               Structured entry detected{(parsed.title || parsed.name) ? `: ${parsed.title || parsed.name}` : ''}.
+                            </div>
+                          )}
+                          {!parsed && hasBlock && (
+                            <div className="text-[10.5px] italic text-maroon-dark mb-1.5">
+                              ⚠ Jarvis tried to draft structured data here, but it didn't parse ({error}). Sending will only save the raw text as notes, not a real entry — try asking him to redo it, ideally with a stronger model.
                             </div>
                           )}
                           <button

@@ -119,6 +119,125 @@ export default function EntryPage({ entry, editable = false, onChange }) {
 
       <Divider className="max-w-xs mx-auto my-8" />
 
+      {/* Character — mainly for NPCs (a shopkeeper, a villain, a converted
+          hero with a full stat block below), but available on any entry.
+          Whole section hides itself when nothing's filled in and the page
+          isn't in edit mode, so a plain combat-only monster isn't cluttered
+          by empty "Role"/"Personality" fields. */}
+      {(() => {
+        const character = entry.character || {};
+        const glanceFields = [
+          { key: 'role', label: 'Role', placeholder: 'Quest Giver, Shopkeeper, Villain, Ally…' },
+          { key: 'occupation', label: 'Occupation' },
+          { key: 'usually_found', label: 'Usually Found' },
+        ];
+        const hasGlance = glanceFields.some((f) => character[f.key]);
+        const hasAny =
+          hasGlance ||
+          character.appearance ||
+          character.personality ||
+          character.voice_and_mannerisms ||
+          character.motives_and_goals ||
+          character.attitude_to_party ||
+          character.combat_note ||
+          character.relationships?.length ||
+          character.hooks?.length;
+        if (!editable && !hasAny) return null;
+
+        return (
+          <>
+            <SectionHeading>Character</SectionHeading>
+
+            {(editable || hasGlance) && (
+              <div className="relative bg-maroon/[0.03] border border-ink/15 rounded-sm p-6 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {glanceFields.map((f) => (
+                    <div key={f.key}>
+                      <div className="text-[10px] font-display uppercase tracking-wider text-ink/50 mb-1">{f.label}</div>
+                      <Field
+                        editable={editable}
+                        value={character[f.key]}
+                        onChange={(e) => set(['character', f.key], e.target.value)}
+                        placeholder={f.placeholder || f.label}
+                        className="text-[15px]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {[
+              ['appearance', 'Appearance'],
+              ['personality', 'Personality'],
+              ['voice_and_mannerisms', 'Voice & Mannerisms'],
+              ['motives_and_goals', 'Motives & Goals'],
+              ['attitude_to_party', 'Attitude to the Party'],
+            ].map(([key, label]) =>
+              !editable && !character[key] ? null : (
+                <div key={key} className="mb-5">
+                  <div className="text-[11px] font-display uppercase tracking-wider text-ink/50 mb-1.5">{label}</div>
+                  <Field editable={editable} value={character[key]} onChange={(e) => set(['character', key], e.target.value)} placeholder={label} textarea rows={3} />
+                </div>
+              )
+            )}
+
+            {(editable || character.relationships?.length) && (
+              <div className="mb-5">
+                <div className="text-[11px] font-display uppercase tracking-wider text-ink/50 mb-2">Relationships</div>
+                {editable ? (
+                  <RepeatableFields
+                    items={character.relationships || []}
+                    onChange={(items) => set(['character', 'relationships'], items)}
+                    fields={[
+                      { key: 'name', placeholder: 'Name' },
+                      { key: 'relationship', placeholder: 'Relationship (e.g. Old rival)' },
+                    ]}
+                    addLabel="+ Add Relationship"
+                  />
+                ) : (
+                  <div className="flex gap-3 flex-wrap">
+                    {character.relationships.map((rel, idx) => (
+                      <div key={idx} className="border border-ink/20 rounded-sm px-4 py-2 min-w-[180px]">
+                        <div className="font-bold text-[15px]">{rel.name}</div>
+                        {rel.relationship ? <div className="italic text-[13px] text-ink/60">{rel.relationship}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(!editable && !character.combat_note) ? null : (
+              <div className="mb-5">
+                <div className="text-[11px] font-display uppercase tracking-wider text-ink/50 mb-1.5">Combat Notes</div>
+                <Field
+                  editable={editable}
+                  value={character.combat_note}
+                  onChange={(e) => set(['character', 'combat_note'], e.target.value)}
+                  placeholder={'Only needed if this NPC has no real stat block below — e.g. "flees at the first sign of danger."'}
+                  textarea
+                  rows={2}
+                />
+              </div>
+            )}
+
+            {(editable || character.hooks?.length) && (
+              <div className="mb-2">
+                <div className="text-[11px] font-display uppercase tracking-wider text-ink/50 mb-2">Hooks</div>
+                {editable ? (
+                  <RepeatableStrings items={character.hooks || []} onChange={(items) => set(['character', 'hooks'], items)} placeholder="A hook involving this character" addLabel="+ Add Hook" />
+                ) : (
+                  character.hooks.map((hook, idx) => (
+                    <p key={idx} className="italic text-[15px] mb-2">{hook}</p>
+                  ))
+                )}
+              </div>
+            )}
+          </>
+        );
+      })()}
+
       {/* Mechanics */}
       <div className="relative bg-maroon/[0.03] border border-ink/15 rounded-sm p-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">

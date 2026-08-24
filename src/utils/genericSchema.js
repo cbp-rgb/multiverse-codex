@@ -11,27 +11,13 @@ function safeStr(x) {
   return typeof x === 'string' ? x : '';
 }
 
+// NPC used to live here as its own lean schema, but that meant an NPC with
+// real combat stats (a major villain, a converted hero like Superman) lost
+// its whole stat block the moment it was labeled "npc" instead of "monster"
+// — the two were fundamentally different shapes. NPC now shares the exact
+// same schema/renderer as Monster (see schema.js's `character` block and
+// EntryPage.jsx) so category is just a label, never a data-shape change.
 export const GENERIC_SCHEMAS = {
-  npc: {
-    label: 'NPC',
-    subtitle: 'The people of your worlds.',
-    fields: [
-      { key: 'role', label: 'Role', type: 'text', placeholder: 'Quest Giver, Shopkeeper, Villain, Ally…' },
-      { key: 'occupation', label: 'Occupation', type: 'text' },
-      { key: 'usually_found', label: 'Usually Found', type: 'text' },
-      { key: 'appearance', label: 'Appearance', type: 'textarea' },
-      { key: 'personality', label: 'Personality', type: 'textarea' },
-      { key: 'voice_and_mannerisms', label: 'Voice & Mannerisms', type: 'textarea' },
-      { key: 'motives_and_goals', label: 'Motives & Goals', type: 'textarea' },
-      { key: 'secrets', label: 'Secrets', type: 'textarea' },
-      { key: 'attitude_to_party', label: 'Attitude to the Party', type: 'textarea' },
-      { key: 'relationships', label: 'Relationships', type: 'pairs', pairFields: ['name', 'relationship'] },
-      { key: 'combat_note', label: 'Combat Notes', type: 'textarea', placeholder: "Can they fight? Rough stats, or \"flees at the first sign of danger.\"" },
-      { key: 'hooks', label: 'Hooks', type: 'list' },
-      { key: 'dm_notes', label: 'DM Notes', type: 'textarea' },
-      { key: 'image_prompt', label: 'Image Prompt', type: 'textarea' },
-    ],
-  },
   spell: {
     label: 'Spell',
     subtitle: 'Magic, canon and homebrew.',

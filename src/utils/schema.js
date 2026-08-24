@@ -54,6 +54,25 @@ export function makeBlankEntry() {
       quest_hooks: [],
     },
 
+    // Narrative/social fields — mainly for NPCs (a shopkeeper, a villain,
+    // a converted hero like Superman), but left available on every entry
+    // since a memorable monster can want a personality too. Blank fields
+    // are hidden on the page rather than shown as empty, so an ordinary
+    // combat-only monster doesn't look cluttered by unused NPC fields.
+    character: {
+      role: '',
+      occupation: '',
+      usually_found: '',
+      appearance: '',
+      personality: '',
+      voice_and_mannerisms: '',
+      motives_and_goals: '',
+      attitude_to_party: '',
+      relationships: [], // [{ name, relationship }]
+      combat_note: '', // for an NPC with no real stat block — "flees at the first sign of danger" — leave blank if the mechanics section above is filled in instead
+      hooks: [],
+    },
+
     notes: '',
   };
 }
@@ -82,6 +101,7 @@ export function mergeWithBlankEntry(partial = {}) {
   const m = safeObj(partial.mechanics);
   const fp = safeObj(partial.flavor_and_presentation);
   const links = safeObj(partial.links);
+  const character = safeObj(partial.character);
   return {
     ...blank,
     ...partial,
@@ -123,6 +143,12 @@ export function mergeWithBlankEntry(partial = {}) {
       ...links,
       related_entries: safeArr(links.related_entries),
       quest_hooks: safeArr(links.quest_hooks),
+    },
+    character: {
+      ...blank.character,
+      ...character,
+      relationships: safeArr(character.relationships),
+      hooks: safeArr(character.hooks),
     },
     vault_tags: safeArr(partial.vault_tags),
     images: safeArr(partial.images),
