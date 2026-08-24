@@ -74,6 +74,36 @@ function creatureToMarkdown(entry) {
   }
   lines.push('');
 
+  const c = entry.character;
+  const hasCharacter =
+    c &&
+    (c.role || c.occupation || c.usually_found || c.appearance || c.personality || c.voice_and_mannerisms || c.motives_and_goals || c.attitude_to_party || c.combat_note || c.relationships?.length || c.hooks?.length);
+  if (hasCharacter) {
+    lines.push('## Character');
+    [
+      line('Role', c.role),
+      line('Occupation', c.occupation),
+      line('Usually Found', c.usually_found),
+    ]
+      .filter(Boolean)
+      .forEach((l) => lines.push(l));
+    if (c.appearance) lines.push('', '**Appearance:** ' + c.appearance);
+    if (c.personality) lines.push('', '**Personality:** ' + c.personality);
+    if (c.voice_and_mannerisms) lines.push('', '**Voice & Mannerisms:** ' + c.voice_and_mannerisms);
+    if (c.motives_and_goals) lines.push('', '**Motives & Goals:** ' + c.motives_and_goals);
+    if (c.attitude_to_party) lines.push('', '**Attitude to the Party:** ' + c.attitude_to_party);
+    if (c.relationships?.length) {
+      lines.push('', '**Relationships**');
+      c.relationships.forEach((r) => lines.push(`- ${r.name}${r.relationship ? ` — ${r.relationship}` : ''}`));
+    }
+    if (c.combat_note) lines.push('', '**Combat Notes:** ' + c.combat_note);
+    if (c.hooks?.length) {
+      lines.push('', '**Hooks**');
+      c.hooks.forEach((h) => lines.push(`- ${h}`));
+    }
+    lines.push('');
+  }
+
   const m = entry.mechanics;
   const hasMechanics = m.size || m.creature_type || m.armor_class || m.hit_points.average || m.traits.length || m.actions.length;
   if (hasMechanics) {

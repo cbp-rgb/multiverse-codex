@@ -65,3 +65,15 @@ export function buildCampaignDigest(overview, codexEntries = []) {
 
   return parts.join('\n\n');
 }
+
+// Finds Codex entries whose title is named in a message, so Jarvis can be
+// given their full, authoritative detail instead of just the name/summary
+// from the digest above. Matched by plain substring against the DM's own
+// text rather than relying on the model to ask for it via a tool call —
+// many free/cheap OpenRouter models don't support tool-calling reliably, so
+// this works the same regardless of which model is selected. Titles under 3
+// characters are skipped so a short name doesn't match half the message.
+export function findMentionedEntries(text, codexEntries = [], max = 5) {
+  const lower = text.toLowerCase();
+  return codexEntries.filter((e) => e.title && e.title.trim().length >= 3 && lower.includes(e.title.trim().toLowerCase())).slice(0, max);
+}

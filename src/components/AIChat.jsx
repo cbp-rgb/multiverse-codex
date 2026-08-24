@@ -4,7 +4,8 @@ import { sendToQuarantine, getJarvisState, saveJarvisState, getOverview, getCode
 import { mergeWithBlankEntry } from '../utils/schema.js';
 import { mergeWithBlankItemEntry } from '../utils/itemSchema.js';
 import { GENERIC_SCHEMAS, GENERIC_CATEGORIES, buildGenericYamlTemplate, mergeWithBlankGenericEntry } from '../utils/genericSchema.js';
-import { buildCampaignDigest } from '../utils/jarvisContext.js';
+import { buildCampaignDigest, findMentionedEntries } from '../utils/jarvisContext.js';
+import { entryToMarkdown } from '../utils/exportMarkdown.js';
 
 // The exact shape utils/schema.js expects — keep this template and mergeWithBlankEntry in sync.
 // This ONE shape covers both monster and npc — set category to whichever fits
@@ -354,16 +355,27 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
       // Best-effort: if this fails, fall back to no digest rather than
       // blocking the whole message.
       let digest = '';
+      let fullDetail = '';
       try {
         const [overview, codexEntries] = await Promise.all([getOverview(), getCodexEntries()]);
         digest = buildCampaignDigest(overview, codexEntries);
+        // The digest above only has names/summaries — if this message names a
+        // specific Codex entry, give Jarvis its real, full writeup instead of
+        // making him guess or work from the summary alone.
+        const mentioned = findMentionedEntries(text, codexEntries);
+        if (mentioned.length) {
+          fullDetail = mentioned.map((e) => entryToMarkdown(e)).join('\n\n---\n\n');
+        }
       } catch {
-        // no digest this turn — not fatal
+        // no digest/full-detail this turn — not fatal
       }
 
       let systemContent = SYSTEM_PROMPT;
       if (digest) {
         systemContent += `\n\nHere is what's already established in this campaign — treat it as known fact, don't ask the DM to re-explain any of it, and stay consistent with it:\n\n${digest}`;
+      }
+      if (fullDetail) {
+        systemContent += `\n\nThe DM's message names one or more existing Codex entries — here is their full, authoritative detail (more complete than the summary above; use this directly rather than guessing):\n\n${fullDetail}`;
       }
       if (customInstructions.trim()) {
         systemContent += `\n\nThe DM has given you these additional standing instructions — follow them alongside everything above, and let them override your default judgment calls where they conflict:\n${customInstructions.trim()}`;
