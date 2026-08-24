@@ -282,7 +282,7 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('codex_api_key') || '');
-  const [model, setModel] = useState(() => localStorage.getItem('codex_api_model') || 'meta-llama/llama-3.1-8b-instruct');
+  const [model, setModel] = useState(() => localStorage.getItem('codex_api_model') || 'deepseek/deepseek-v4-flash-0731');
   const [customInstructions, setCustomInstructions] = useState('');
   // Transient "Sent ✓" confirmation per message index — clears itself so the
   // same message can be sent to Quarantine more than once (e.g. after tweaking
