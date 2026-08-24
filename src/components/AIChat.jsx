@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import yaml from 'js-yaml';
-import { sendToQuarantine } from '../utils/db.js';
+import { sendToQuarantine, getJarvisState, saveJarvisState, getOverview, getCodexEntries } from '../utils/db.js';
 import { mergeWithBlankEntry } from '../utils/schema.js';
 import { mergeWithBlankItemEntry } from '../utils/itemSchema.js';
 import { GENERIC_SCHEMAS, GENERIC_CATEGORIES, buildGenericYamlTemplate, mergeWithBlankGenericEntry } from '../utils/genericSchema.js';
+import { buildCampaignDigest } from '../utils/jarvisContext.js';
 
 // The exact shape utils/schema.js expects — keep this template and mergeWithBlankEntry in sync.
 const YAML_TEMPLATE = `title: ""
@@ -212,29 +213,25 @@ const DEFAULT_MESSAGE = {
 
 export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem('codex_chat_history');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return [DEFAULT_MESSAGE];
-      }
-    }
-    return [DEFAULT_MESSAGE];
-  });
+  // Chat history and standing instructions load from Supabase (below) so a
+  // conversation continues across devices instead of staying trapped in one
+  // browser's localStorage — start with the default greeting and swap in the
+  // real synced state once it arrives.
+  const [messages, setMessages] = useState([DEFAULT_MESSAGE]);
+  const [remoteLoaded, setRemoteLoaded] = useState(false);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('codex_api_key') || '');
   const [model, setModel] = useState(() => localStorage.getItem('codex_api_model') || 'meta-llama/llama-3.1-8b-instruct');
-  const [customInstructions, setCustomInstructions] = useState(() => localStorage.getItem('codex_custom_instructions') || '');
+  const [customInstructions, setCustomInstructions] = useState('');
   // Transient "Sent ✓" confirmation per message index — clears itself so the
   // same message can be sent to Quarantine more than once (e.g. after tweaking
   // Jarvis's answer, or deliberately wanting two drafts from one reply).
   const [sentFlash, setSentFlash] = useState({});
   const [sendError, setSendError] = useState({});
   const endRef = useRef(null);
+  const saveStateTimer = useRef(null);
 
   useEffect(() => {
     localStorage.setItem('codex_api_key', apiKey);
@@ -242,12 +239,30 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
   useEffect(() => {
     localStorage.setItem('codex_api_model', model);
   }, [model]);
+
   useEffect(() => {
-    localStorage.setItem('codex_custom_instructions', customInstructions);
-  }, [customInstructions]);
+    getJarvisState()
+      .then((stored) => {
+        if (stored?.messages?.length) setMessages(stored.messages);
+        if (typeof stored?.customInstructions === 'string') setCustomInstructions(stored.customInstructions);
+      })
+      .finally(() => setRemoteLoaded(true));
+  }, []);
+
+  // Debounced so a fast back-and-forth conversation or a DM typing standing
+  // instructions doesn't fire a write on every single keystroke/token.
   useEffect(() => {
-    localStorage.setItem('codex_chat_history', JSON.stringify(messages));
-  }, [messages]);
+    if (!remoteLoaded) return undefined;
+    clearTimeout(saveStateTimer.current);
+    saveStateTimer.current = setTimeout(() => {
+      saveJarvisState({ messages, customInstructions }).catch(() => {
+        // Best-effort sync — a failed save here shouldn't interrupt chatting;
+        // the next successful save will catch the state back up.
+      });
+    }, 800);
+    return () => clearTimeout(saveStateTimer.current);
+  }, [messages, customInstructions, remoteLoaded]);
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -281,6 +296,28 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
     setIsTyping(true);
 
     try {
+      // Give Jarvis real campaign memory — a fresh digest of the Overview and
+      // established Lore/Sessions/NPCs/Factions/Locations every time, so he
+      // already knows what's happened even in a brand new conversation on a
+      // different device, instead of the DM re-explaining it each time.
+      // Best-effort: if this fails, fall back to no digest rather than
+      // blocking the whole message.
+      let digest = '';
+      try {
+        const [overview, codexEntries] = await Promise.all([getOverview(), getCodexEntries()]);
+        digest = buildCampaignDigest(overview, codexEntries);
+      } catch {
+        // no digest this turn — not fatal
+      }
+
+      let systemContent = SYSTEM_PROMPT;
+      if (digest) {
+        systemContent += `\n\nHere is what's already established in this campaign — treat it as known fact, don't ask the DM to re-explain any of it, and stay consistent with it:\n\n${digest}`;
+      }
+      if (customInstructions.trim()) {
+        systemContent += `\n\nThe DM has given you these additional standing instructions — follow them alongside everything above, and let them override your default judgment calls where they conflict:\n${customInstructions.trim()}`;
+      }
+
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -291,12 +328,7 @@ export default function AIChat({ onSentToQuarantine, seed, onSeedHandled }) {
           model,
           stream: true,
           messages: [
-            {
-              role: 'system',
-              content: customInstructions.trim()
-                ? `${SYSTEM_PROMPT}\n\nThe DM has given you these additional standing instructions — follow them alongside everything above, and let them override your default judgment calls where they conflict:\n${customInstructions.trim()}`
-                : SYSTEM_PROMPT,
-            },
+            { role: 'system', content: systemContent },
             ...nextMessages.map((m) => ({ role: m.role, content: m.text })),
           ],
         }),

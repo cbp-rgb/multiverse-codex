@@ -9,6 +9,7 @@ import { requireSupabase } from './supabaseClient.js';
 const QUARANTINE_TABLE = 'quarantine_items';
 const CODEX_TABLE = 'codex_entries';
 const OVERVIEW_TABLE = 'overview_data';
+const JARVIS_STATE_TABLE = 'jarvis_state';
 
 function makeId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -96,6 +97,24 @@ export async function saveOverview(data) {
   const supabase = requireSupabase();
   const entry = { ...data, id: 'main' };
   const { error } = await supabase.from(OVERVIEW_TABLE).upsert({ id: 'main', data: entry });
+  if (error) throw error;
+  return entry;
+}
+
+// Jarvis's chat history + standing "Steer Jarvis" instructions — synced so a
+// conversation started on one device continues seamlessly on another,
+// instead of each browser having its own separate localStorage copy.
+export async function getJarvisState() {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase.from(JARVIS_STATE_TABLE).select('data').eq('id', 'main').maybeSingle();
+  if (error) throw error;
+  return data ? data.data : null;
+}
+
+export async function saveJarvisState(state) {
+  const supabase = requireSupabase();
+  const entry = { ...state, id: 'main' };
+  const { error } = await supabase.from(JARVIS_STATE_TABLE).upsert({ id: 'main', data: entry });
   if (error) throw error;
   return entry;
 }
