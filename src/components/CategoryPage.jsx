@@ -4,6 +4,7 @@ import { saveMarkdownToVault, downloadMarkdown } from '../utils/exportMarkdown.j
 import EntryPageFor from './EntryPageFor.jsx';
 import ExportButton from './ExportButton.jsx';
 import PrintCard from './PrintCard.jsx';
+import Divider from './Divider.jsx';
 import { buildReworkSeed } from '../utils/reworkPrompt.js';
 
 export default function CategoryPage({ category, title, subtitle, onAskJarvis }) {
@@ -114,6 +115,7 @@ export default function CategoryPage({ category, title, subtitle, onAskJarvis })
       <div className="text-center mb-10">
         <div className="font-deco text-[34px] text-maroon-dark">{title}</div>
         <div className="italic text-ink/60 mt-2">{subtitle}</div>
+        <Divider className="max-w-[180px] mx-auto mt-5" />
       </div>
 
       {entries.length > 0 && (
@@ -129,13 +131,18 @@ export default function CategoryPage({ category, title, subtitle, onAskJarvis })
         </div>
       )}
 
-      {entries.length === 0 && <div className="text-center italic text-ink/50 py-16">Nothing here yet.</div>}
+      {entries.length === 0 && (
+        <div className="text-center py-20">
+          <div className="text-[32px] text-maroon/15 mb-3" aria-hidden="true">✦</div>
+          <div className="italic text-ink/50">Nothing here yet.</div>
+        </div>
+      )}
 
       <div className="flex flex-col">
         {entries.map((entry, idx) => (
           <div
             key={entry.id}
-            className={`flex items-baseline justify-between gap-4 py-4 hover:bg-maroon/5 ${idx > 0 ? 'border-t border-ink/10' : ''}`}
+            className={`flex items-baseline justify-between gap-4 py-4 px-3 -mx-3 rounded-sm border-l-2 border-l-transparent hover:border-l-gold hover:bg-maroon/5 transition-colors ${idx > 0 ? 'border-t border-ink/10' : ''}`}
           >
             <button onClick={() => openEntry(entry)} className="flex-1 flex items-baseline justify-between gap-4 text-left">
               <span className="font-display text-lg text-maroon-dark">{entry.title || 'Untitled Entry'}</span>

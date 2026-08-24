@@ -6,6 +6,36 @@ body {
   margin: 0;
 }
 
+/* A flat solid parchment color reads as a plain webpage, not a page in a
+   book. Layer in a subtle fibrous grain (an SVG noise filter — no image
+   asset needed) plus a faint edge vignette so the page has real texture and
+   depth instead of looking like a form on a blank sheet. */
+body {
+  background-color: #f1e6c8;
+  background-image:
+    radial-gradient(ellipse at center, transparent 55%, rgba(58, 9, 16, 0.05) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch' result='noise'/><feColorMatrix in='noise' type='matrix' values='0 0 0 0 0.36  0 0 0 0 0.24  0 0 0 0 0.1  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-attachment: fixed, fixed;
+  background-size: cover, 300px 300px;
+}
+
+/* Same grain, warmed for the maroon banner — applied via this class rather
+   than a plain background-image so the header's own gradient still shows
+   through underneath it. */
+.ornate-texture {
+  position: relative;
+}
+.ornate-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch' result='noise'/><feColorMatrix in='noise' type='matrix' values='0 0 0 0 1  0 0 0 0 0.85  0 0 0 0 0.5  0 0 0 0.09 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 300px 300px;
+}
+
 /* Player print cards — sized for a 4x6" thermal/photo label printer.
    Hidden on screen at all times; shown (and everything else hidden) only
    when printing. display and visibility are handled separately on purpose —

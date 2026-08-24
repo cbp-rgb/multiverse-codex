@@ -5,6 +5,7 @@ import { ALL_CATEGORY_LABELS } from '../utils/categoryConvert.js';
 import EntryPageFor from './EntryPageFor.jsx';
 import ExportButton from './ExportButton.jsx';
 import PrintCard from './PrintCard.jsx';
+import Divider from './Divider.jsx';
 import { buildReworkSeed } from '../utils/reworkPrompt.js';
 
 function Snippet({ entry, query }) {
@@ -109,6 +110,7 @@ export default function SearchPage({ onAskJarvis }) {
       <div className="text-center mb-10">
         <div className="font-deco text-[34px] text-maroon-dark">Search</div>
         <div className="italic text-ink/60 mt-2">Every word of every entry in the Codex — stats, lore, secrets, notes, all of it.</div>
+        <Divider className="max-w-[180px] mx-auto mt-5" />
       </div>
 
       <div className="mb-10">
@@ -121,10 +123,18 @@ export default function SearchPage({ onAskJarvis }) {
         />
       </div>
 
-      {!query.trim() && <div className="text-center italic text-ink/50 py-16">Start typing to search across every category in the Codex.</div>}
+      {!query.trim() && (
+        <div className="text-center py-20">
+          <div className="text-[32px] text-maroon/15 mb-3" aria-hidden="true">✦</div>
+          <div className="italic text-ink/50">Start typing to search across every category in the Codex.</div>
+        </div>
+      )}
 
       {query.trim() && results.length === 0 && (
-        <div className="text-center italic text-ink/50 py-16">Nothing matches "{query}" — Quarantine drafts aren't searched here, only approved Codex entries.</div>
+        <div className="text-center py-20">
+          <div className="text-[32px] text-maroon/15 mb-3" aria-hidden="true">✦</div>
+          <div className="italic text-ink/50">Nothing matches "{query}" — Quarantine drafts aren't searched here, only approved Codex entries.</div>
+        </div>
       )}
 
       {query.trim() && results.length > 0 && (
@@ -137,7 +147,7 @@ export default function SearchPage({ onAskJarvis }) {
               <button
                 key={entry.id}
                 onClick={() => openEntry(entry)}
-                className={`text-left py-4 hover:bg-maroon/5 ${idx > 0 ? 'border-t border-ink/10' : ''}`}
+                className={`text-left py-4 px-3 -mx-3 rounded-sm border-l-2 border-l-transparent hover:border-l-gold hover:bg-maroon/5 transition-colors ${idx > 0 ? 'border-t border-ink/10' : ''}`}
               >
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="font-display text-lg text-maroon-dark">{entry.title || 'Untitled Entry'}</span>

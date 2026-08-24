@@ -9,6 +9,7 @@ import EntryPageFor from './EntryPageFor.jsx';
 import ObsidianImporter from './ObsidianImporter.jsx';
 import ExportButton from './ExportButton.jsx';
 import PrintCard from './PrintCard.jsx';
+import Divider from './Divider.jsx';
 import { buildReworkSeed } from '../utils/reworkPrompt.js';
 
 // A blank starting point for hand-building an entry, independent of Jarvis
@@ -151,6 +152,7 @@ export default function Quarantine({ onChange, onAskJarvis }) {
       <div className="text-center mb-10">
         <div className="font-deco text-[34px] text-maroon-dark">Quarantine</div>
         <div className="italic text-ink/60 mt-2">Nothing here is canon. Read it, reshape it, or send it back to the void.</div>
+        <Divider className="max-w-[180px] mx-auto mt-5" />
       </div>
 
       <div className="flex justify-center items-center gap-3 mb-8">
@@ -192,8 +194,11 @@ export default function Quarantine({ onChange, onAskJarvis }) {
       </div>
 
       {items.length === 0 && (
-        <div className="text-center italic text-ink/50 py-16">
-          Nothing in quarantine right now. Anything you send from Jarvis, or import from Obsidian, lands here first.
+        <div className="text-center py-20">
+          <div className="text-[32px] text-maroon/15 mb-3" aria-hidden="true">✦</div>
+          <div className="italic text-ink/50">
+            Nothing in quarantine right now. Anything you send from Jarvis, or import from Obsidian, lands here first.
+          </div>
         </div>
       )}
 
@@ -201,7 +206,7 @@ export default function Quarantine({ onChange, onAskJarvis }) {
         {items.map((item, idx) => (
           <div
             key={item.id}
-            className={`flex items-baseline justify-between gap-4 py-4 hover:bg-maroon/5 ${idx > 0 ? 'border-t border-ink/10' : ''}`}
+            className={`flex items-baseline justify-between gap-4 py-4 px-3 -mx-3 rounded-sm border-l-2 border-l-transparent hover:border-l-gold hover:bg-maroon/5 transition-colors ${idx > 0 ? 'border-t border-ink/10' : ''}`}
           >
             <button onClick={() => openItem(item)} className="flex-1 flex items-baseline justify-between gap-4 text-left">
               <span className="font-display text-lg text-maroon-dark">{item.title || 'Untitled Draft'}</span>
