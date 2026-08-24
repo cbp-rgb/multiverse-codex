@@ -14,7 +14,7 @@ const TABS = [
 
 const PLACEHOLDER_TABS = [];
 
-export default function Header({ active, onChange, quarantineCount }) {
+export default function Header({ active, onChange, quarantineCount, onSignOut }) {
   return (
     <header className="relative bg-gradient-to-b from-maroon-dark to-maroon-darker border-b-4 border-double border-gold">
       <div className="max-w-6xl mx-auto px-10 pt-6 pb-3 flex items-center justify-between">
@@ -32,9 +32,13 @@ export default function Header({ active, onChange, quarantineCount }) {
             </div>
           </div>
         </div>
-        <div className="w-9 h-9 rounded-full border border-gold flex items-center justify-center text-[13px] text-parchment font-display">
+        <button
+          onClick={onSignOut}
+          title="Sign out"
+          className="w-9 h-9 rounded-full border border-gold flex items-center justify-center text-[13px] text-parchment font-display hover:bg-gold/10"
+        >
           DM
-        </div>
+        </button>
       </div>
       <nav className="max-w-6xl mx-auto px-10 flex flex-wrap gap-0.5 border-t border-gold/25">
         {TABS.map((tab) => (

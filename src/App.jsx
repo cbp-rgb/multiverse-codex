@@ -7,6 +7,7 @@ import Codex from './components/Codex.jsx';
 import CategoryPage from './components/CategoryPage.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { getQuarantineItems } from './utils/db.js';
+import { supabase } from './utils/supabaseClient.js';
 
 const CATEGORY_TABS = {
   npc: { title: 'NPCs', subtitle: 'The people of your worlds.' },
@@ -34,7 +35,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-parchment text-ink font-body">
-      <Header active={tab} onChange={setTab} quarantineCount={quarantineCount} />
+      <Header active={tab} onChange={setTab} quarantineCount={quarantineCount} onSignOut={() => supabase?.auth.signOut()} />
       <ErrorBoundary key={tab}>
         {tab === 'overview' && <OverviewPage />}
         {tab === 'quarantine' && <Quarantine onChange={refreshCount} onAskJarvis={setJarvisSeed} />}
