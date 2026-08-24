@@ -45,6 +45,12 @@ function genericToMarkdown(entry) {
       lines.push(`**${field.label}**`);
       value.forEach((v) => lines.push(`- ${v[field.pairFields[0]] || ''}${v[field.pairFields[1]] ? ` — ${v[field.pairFields[1]]}` : ''}`));
       lines.push('');
+    } else if (field.type === 'table') {
+      if (!value?.length) continue;
+      const [rollKey, resultKey] = field.pairFields;
+      lines.push(`**${field.label}**`, '', '| Roll | Result |', '|---|---|');
+      value.forEach((v) => lines.push(`| ${v[rollKey] || ''} | ${v[resultKey] || ''} |`));
+      lines.push('');
     } else if (value) {
       lines.push(`**${field.label}:** ${value}`, '');
     }

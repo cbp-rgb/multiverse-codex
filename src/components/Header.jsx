@@ -10,6 +10,7 @@ const TABS = [
   { id: 'mechanic', label: 'Mechanics' },
   { id: 'lore', label: 'Lore' },
   { id: 'session', label: 'Sessions' },
+  { id: 'table', label: 'Tables' },
 ];
 
 const PLACEHOLDER_TABS = [];

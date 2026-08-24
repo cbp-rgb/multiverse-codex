@@ -110,6 +110,17 @@ export const GENERIC_SCHEMAS = {
       { key: 'next_session_hooks', label: 'Hooks for Next Time', type: 'textarea' },
     ],
   },
+  table: {
+    label: 'Table',
+    subtitle: 'Random tables to roll on — loot, encounters, rumors, quirks, whatever the moment calls for.',
+    fields: [
+      { key: 'dice', label: 'Dice', type: 'text', placeholder: 'd20, d100, d6…' },
+      { key: 'table_type', label: 'Type', type: 'text', placeholder: 'Loot, Random Encounter, Rumor, NPC Quirk, Weather…' },
+      { key: 'usage_notes', label: 'Usage Notes', type: 'textarea', placeholder: 'When and how to roll on this.' },
+      { key: 'entries', label: 'Entries', type: 'table', pairFields: ['roll', 'result'] },
+      { key: 'dm_notes', label: 'DM Notes', type: 'textarea' },
+    ],
+  },
 };
 
 export function getGenericSchema(category) {
@@ -128,7 +139,7 @@ export function buildGenericYamlTemplate(category) {
   for (const field of schema.fields) {
     if (field.type === 'list') {
       lines.push(`${field.key}: [] # ${field.label}`);
-    } else if (field.type === 'pairs') {
+    } else if (field.type === 'pairs' || field.type === 'table') {
       lines.push(`${field.key}: # ${field.label}`);
       lines.push(`  - ${field.pairFields[0]}: ""`);
       for (let i = 1; i < field.pairFields.length; i++) lines.push(`    ${field.pairFields[i]}: ""`);
@@ -145,7 +156,7 @@ export function makeBlankGenericPayload(category) {
   const payload = {};
   for (const field of schema.fields) {
     if (field.type === 'list') payload[field.key] = [];
-    else if (field.type === 'pairs') payload[field.key] = [];
+    else if (field.type === 'pairs' || field.type === 'table') payload[field.key] = [];
     else payload[field.key] = '';
   }
   return payload;
@@ -162,7 +173,7 @@ export function mergeGenericPayload(category, raw = {}) {
     const value = raw[field.key];
     if (field.type === 'list') {
       payload[field.key] = safeArr(value).filter((v) => typeof v === 'string');
-    } else if (field.type === 'pairs') {
+    } else if (field.type === 'pairs' || field.type === 'table') {
       payload[field.key] = safeArr(value).filter((v) => v && typeof v === 'object');
     } else {
       payload[field.key] = safeStr(value);

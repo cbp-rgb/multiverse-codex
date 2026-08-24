@@ -18,6 +18,7 @@ const CATEGORY_TABS = {
   mechanic: { title: 'Mechanics', subtitle: 'Homebrew rules and systems.' },
   lore: { title: 'Lore', subtitle: 'World history, cosmology, and the truths behind the truths.' },
   session: { title: 'Sessions', subtitle: 'What happened, and what it opened up.' },
+  table: { title: 'Tables', subtitle: 'Random tables to roll on — loot, encounters, rumors, quirks, whatever the moment calls for.' },
 };
 
 export default function App() {

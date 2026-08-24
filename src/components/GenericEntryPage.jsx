@@ -18,6 +18,7 @@ const CATEGORY_ICONS = {
   mechanic: '⚙',
   lore: '†',
   session: '✧',
+  table: '§',
 };
 
 // A handful of field keys recur across categories with the same *meaning*
@@ -147,6 +148,46 @@ export default function GenericEntryPage({ entry, editable = false, onChange }) 
                     <span className="text-maroon/60 mr-1.5" aria-hidden="true">{icon}</span>{v}
                   </p>
                 ))
+              )}
+            </div>
+          );
+        }
+
+        if (field.type === 'table') {
+          if (!editable && !(value || []).length) return null;
+          const [rollKey, resultKey] = field.pairFields;
+          return (
+            <div key={field.key} className="mb-6">
+              <div className="text-[11px] font-display uppercase tracking-wider text-ink/50 mb-2">{field.label}</div>
+              {editable ? (
+                <RepeatableFields
+                  items={value || []}
+                  onChange={(items) => set(['details', field.key], items)}
+                  fields={[
+                    { key: rollKey, placeholder: 'Roll (e.g. 1-3, 14)' },
+                    { key: resultKey, placeholder: 'Result', type: 'textarea', rows: 2 },
+                  ]}
+                  addLabel={`+ Add Row`}
+                />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-[15px]">
+                    <thead>
+                      <tr className="border-b-2 border-maroon/30">
+                        <th className="text-left font-display text-[11px] uppercase tracking-wider text-ink/50 py-1.5 pr-4 w-20">Roll</th>
+                        <th className="text-left font-display text-[11px] uppercase tracking-wider text-ink/50 py-1.5">Result</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {value.map((row, idx) => (
+                        <tr key={idx} className="border-b border-ink/10">
+                          <td className="py-1.5 pr-4 font-bold align-top whitespace-nowrap">{row[rollKey]}</td>
+                          <td className="py-1.5 align-top">{row[resultKey]}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           );
