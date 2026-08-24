@@ -143,6 +143,11 @@ export function buildGenericYamlTemplate(category) {
       lines.push(`${field.key}: # ${field.label}`);
       lines.push(`  - ${field.pairFields[0]}: ""`);
       for (let i = 1; i < field.pairFields.length; i++) lines.push(`    ${field.pairFields[i]}: ""`);
+    } else if (field.type === 'textarea') {
+      // Block scalar, not a quoted string — prose this long is where a model
+      // forgetting to escape an internal quote/apostrophe breaks the whole
+      // yaml block. `>-` needs no escaping at all for anything inside it.
+      lines.push(`${field.key}: >- # ${field.label}`);
     } else {
       lines.push(`${field.key}: "" # ${field.label}`);
     }

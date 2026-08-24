@@ -59,30 +59,30 @@ mechanics:
   experience_points: ""
   traits:
     - name: ""
-      desc: ""
+      desc: >-
   actions:
     - name: ""
-      desc: ""
+      desc: >-
   legendary_actions:
     per_round: 3
     actions:
       - name: ""
-        desc: ""
+        desc: >-
 lore:
-  canon_overview: ""
-  translation_notes: ""
-  dm_secrets: ""
+  canon_overview: >-
+  translation_notes: >-
+  dm_secrets: >-
 flavor_and_presentation:
   sensory_profile:
-    sight: ""
-    sound: ""
-    smell: ""
+    sight: >-
+    sound: >-
+    smell: >-
   flavor_quotes: []
   custom_moves:
-    - trigger: ""
-      effect: ""
+    - trigger: >-
+      effect: >-
 image_prompt:
-  prompt: ""
+  prompt: >-
   style: ""
   negative_prompt: ""
 links:
@@ -94,15 +94,15 @@ character: # fill in for an NPC (a person); leave every field blank for a plain 
   role: "" # Quest Giver, Shopkeeper, Villain, Ally…
   occupation: ""
   usually_found: ""
-  appearance: ""
-  personality: ""
-  voice_and_mannerisms: ""
-  motives_and_goals: ""
-  attitude_to_party: ""
+  appearance: >-
+  personality: >-
+  voice_and_mannerisms: >-
+  motives_and_goals: >-
+  attitude_to_party: >-
   relationships:
     - name: ""
       relationship: ""
-  combat_note: "" # only if this NPC has no real stat block above — e.g. "flees at the first sign of danger"
+  combat_note: >- # only if this NPC has no real stat block above — e.g. flees at the first sign of danger
   hooks: []`;
 
 // The exact shape utils/itemSchema.js expects to receive (before it maps
@@ -132,30 +132,30 @@ mechanics:
     stealth_disadvantage: false
   effects:
     - name: ""
-      desc: ""
+      desc: >-
   charges:
     max: 0
     recharge_formula: ""
     recharge_timing: ""
     abilities:
       - name: ""
-        desc: ""
+        desc: >-
 lore: # applies to every item, however ordinary
-  summary: ""
-  description: "" # physical appearance
-  translation_notes: "" # DM-facing: why it's statted this way
-  image_prompt: ""
+  summary: >-
+  description: >- # physical appearance
+  translation_notes: >- # DM-facing: why it's statted this way
+  image_prompt: >-
 significant: false # true only for a genuinely major/sentient/narratively-important item
 character: # ONLY fill this in when significant: true — leave every field blank for an ordinary item
-  personality: ""
-  motives: ""
-  secrets: ""
+  personality: >-
+  motives: >-
+  secrets: >-
   quirks: []
-  voice_and_mannerisms: ""
-  reputation: ""
-  faction_standing: ""
+  voice_and_mannerisms: >-
+  reputation: >-
+  faction_standing: >-
   plot_hooks: []
-  dm_notes: ""`;
+  dm_notes: >-`;
 
 // Placeholder Co-DM rules until the real Co DM.md / Co DM Rules.md content from the
 // vault is dropped in — swap this out rather than layering a second persona on top.
@@ -182,6 +182,16 @@ Operating rules:
 3. You are a collaborator, not an authority. The DM has final say on what is canon. Offer suggestions, alternatives, and hooks proactively, but nothing you say is canon until the DM saves it.
 4. Nothing you produce is saved automatically. The DM decides what's worth keeping by sending it to Quarantine for review.
 5. Fill in every section of an entry, not just the mechanical crunch. A complete monster/npc draft has real sensory flavor (sight/sound/smell), at least one flavor quote, a genuine image prompt, something in DM Eyes Only (a weakness, a secret, a hidden agenda — every creature has SOME hidden angle), and at least one quest hook — these are not optional extras to skip, they're part of what makes an entry usable at the table. The same goes for every other shape: an item needs real lore and an image prompt, a location needs atmosphere and hooks, and so on. Only leave a specific field blank when nothing sensible genuinely applies (e.g. no related entries exist yet to link) — never skip a whole section just because it takes more thought than the stat block did.
+
+Critical YAML formatting rule — this is the #1 cause of a broken entry, follow it exactly: for ANY field holding more than about a sentence of prose (a description, personality, lore, dialogue, an effect/trigger explanation, anything narrative), never write it as a quoted "string on one line" — quoted strings need every internal \`"\` and sometimes \`'\` escaped, and forgetting even one breaks the entire yaml block. Instead use a folded block scalar, which needs no escaping at all no matter what punctuation, quotes, or apostrophes the text contains:
+\`\`\`yaml
+some_field: >-
+  Your prose goes here, indented under the key. It can span
+  multiple lines, and it can freely contain "quoted dialogue",
+  apostrophes like don't/he'll, colons, anything — none of it
+  needs escaping inside a block scalar.
+\`\`\`
+Every yaml template below marks its long-text fields with \`>-\` already — always fill those in with an indented block scalar like the example above, never collapse them back into a quoted string. Reserve plain \`""\` strings for genuinely short values (a name, a number, a one-line label).
 
 When — and only when — the DM asks you to draft, convert, or statblock something into a full entry, respond with a single fenced \`\`\`yaml code block. There are nine possible shapes — use whichever matches what's being drafted, and never mix fields from one into another or invent your own structure:
 
