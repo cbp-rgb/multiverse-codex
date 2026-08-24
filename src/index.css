@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+}
+
+/* Player print cards — sized for a 4x6" thermal/photo label printer.
+   Hidden on screen at all times; shown (and everything else hidden) only
+   when printing. display and visibility are handled separately on purpose —
+   display:none can't be overridden by a visibility rule, so screen-hiding
+   uses display and print-hiding-everything-else uses visibility. */
+.print-card {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-card {
+    display: block !important;
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4in;
+  }
+  .print-card * {
+    visibility: visible;
+  }
+  @page {
+    size: 4in 6in;
+    margin: 0.2in;
+  }
+}
